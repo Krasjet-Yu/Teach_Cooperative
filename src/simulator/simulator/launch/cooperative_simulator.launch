@@ -1,0 +1,33 @@
+<launch>
+  <!-- <node pkg="rviz" type="rviz" name="rviz" args="-d $(find mockamap)/rviz/mockamap.rviz" required="true" /> -->
+
+  <include file="$(find mockamap)/launch/mockamap.launch"/>
+
+  <group ns="drone0">
+    <node pkg="nodelet" type="nodelet" name="manager" args="manager" output="screen">
+      <param name="num_worker_threads" value="16"/>
+    </node>
+
+    <include file="$(find simulator)/launch/uav_simulator.launch"/>
+
+    <node pkg="odom_visualization" name="odom_visualization" type="odom_visualization" output="screen">
+      <remap from="~odom" to="odom" />
+      <param name="robot_scale" value="1.0"/>
+    </node>
+  </group>
+
+  <group ns="ugv0">
+    <node pkg="nodelet" type="nodelet" name="manager" args="manager" output="screen">
+      <param name="num_worker_threads" value="16"/>
+    </node>
+
+    <include file="$(find simulator)/launch/ugv_simulator.launch"/>
+
+    <node pkg="odom_visualization" name="odom_visualization" type="odom_visualization_car" output="screen">
+      <remap from="~odom" to="odom" />
+      <param name="mesh_resource" value="package://odom_visualization/meshes/car.dae"/>
+      <param name="robot_scale" value="0.1"/>
+    </node>
+  </group>
+
+</launch>
