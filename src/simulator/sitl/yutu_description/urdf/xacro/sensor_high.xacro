@@ -1,0 +1,53 @@
+<?xml version="1.0"?>  
+  
+<robot name="yutu_sensor" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+	<!-- ref: https://www.guyuehome.com/34874 -->
+    <!-- control module -->
+    <!-- Transmission is important to link the joints and the controller -->
+	
+    <xacro:macro name="vel_joint_trans" params="vel_joint_name">
+        <transmission name="${vel_joint_name}_trans">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="${vel_joint_name}">
+                <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="${vel_joint_name}_motor">
+                <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+                <mechanicalReduction>1</mechanicalReduction>
+            </actuator>
+        </transmission>
+    </xacro:macro>
+
+    <xacro:macro name="effort_joint_trans" params="effort_joint_name">
+        <transmission name="${effort_joint_name}_trans">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="${effort_joint_name}" >
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="${effort_joint_name}_motor">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+                <mechanicalReduction>1</mechanicalReduction>
+                <motorTorqueConstant>100</motorTorqueConstant>
+            </actuator>
+        </transmission>
+    </xacro:macro>
+
+	<xacro:vel_joint_trans vel_joint_name="left_rear_wheel_joint" />
+    <xacro:vel_joint_trans vel_joint_name="right_rear_wheel_joint" />
+
+	<xacro:effort_joint_trans effort_joint_name="left_front_wheel_joint" />
+    <xacro:effort_joint_trans effort_joint_name="right_front_wheel_joint" />
+    
+	<!-- skid steer drive controller -->
+    <xacro:include filename="$(find yutu_description)/urdf/xacro/skid_steer_drive_controller.xacro" />
+    <!-- camera -->
+  	<!-- <xacro:include filename="$(find yutu_description)/urdf/xacro/stereo_camera.xacro" /> -->
+    <xacro:include filename="$(find yutu_description)/urdf/xacro/release_camera.xacro" />
+	<!-- laser -->
+	<xacro:include filename="$(find yutu_description)/urdf/xacro/velodyne.xacro" />
+    <!-- <xacro:include filename="$(find yutu_description)/urdf/xacro/2d_laser.xacro" /> -->
+	<!-- imu -->
+	<xacro:include filename="$(find yutu_description)/urdf/xacro/imu.xacro" />
+
+</robot>

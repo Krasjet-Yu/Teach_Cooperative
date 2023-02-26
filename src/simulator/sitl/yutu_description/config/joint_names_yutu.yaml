@@ -1,0 +1,13 @@
+controller_joint_names: ['', 'right_up_joint', 'right_down_joint', 'right_front_wheel_joint', 'right_middle_wheel_joint', 'right_rear_wheel_joint', 'left_up_joint', 'left_down_joint', 'left_front_wheel_joint', 'left_middle_wheel_joint', 'left_rear_wheel_joint', ]
+controllers: {
+  base_controller: {
+    type: diff_controller,
+    base_frame_id: base_footprint,
+    ticks_meter: 4100,
+    Kp: 12,
+    Kd: 12,
+    Ki: 0,
+    Ko: 50,
+    accel_limit: 1.0
+  }
+}

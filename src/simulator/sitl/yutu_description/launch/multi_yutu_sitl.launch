@@ -1,0 +1,74 @@
+<launch>
+  <!-- set launch file param -->
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="gui" default="true"/>
+  <arg name="headless" default="false"/>
+  <arg name="debug" default="false"/>
+  <arg name="world" default="$(find yutu_description)/worlds/terrain.world"/>
+
+  <!-- run gazebo sim env -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">+
+    <arg name="world_name" value="$(arg world)" />
+    <arg name="debug" value="$(arg debug)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+    <arg name="headless" value="$(arg headless)"/>
+  </include>
+
+  <arg name="vehicle" value="yutu"/>
+
+  <group ns='yutu_0'>
+    <!-- vehicle configs -->
+      <arg name="ID" value="0"/>
+      <arg name="ID_in_group" value="0"/>
+    <!-- vehicle spawn -->
+    <include file="$(find yutu_description)/launch/single_yutu_sitl.launch" >
+      <arg name="x" value="0"/>
+      <arg name="y" value="0"/>
+      <arg name="z" value="0"/>
+      <arg name="R" value="0"/>
+      <arg name="P" value="0"/>
+      <arg name="Y" value="0"/>
+      <arg name="vehicle" value="$(arg vehicle)"/>
+      <arg name="ID" value="$(arg ID)"/>
+      <arg name="ID_in_group" value="$(arg ID_in_group)"/>
+    </include>
+  </group>
+
+  <!-- <group ns='yutu_1'>
+      <arg name="ID" value="1"/>
+      <arg name="ID_in_group" value="1"/>
+    <include file="$(find yutu_description)/launch/single_yutu_sitl.launch" >
+      <arg name="x" value="7"/>
+      <arg name="y" value="7"/>
+      <arg name="z" value="0"/>
+      <arg name="R" value="0"/>
+      <arg name="P" value="0"/>
+      <arg name="Y" value="0"/>
+      <arg name="vehicle" value="$(arg vehicle)"/>
+      <arg name="ID" value="$(arg ID)"/>
+      <arg name="ID_in_group" value="$(arg ID_in_group)"/>
+    </include>
+    
+  </group>
+
+  <group ns='yutu_2'>
+      <arg name="ID" value="2"/>
+      <arg name="ID_in_group" value="2"/>
+    <include file="$(find yutu_description)/launch/single_yutu_sitl.launch" >
+      <arg name="x" value="7"/>
+      <arg name="y" value="-7"/>
+      <arg name="z" value="0"/>
+      <arg name="R" value="0"/>
+      <arg name="P" value="0"/>
+      <arg name="Y" value="0"/>
+      <arg name="vehicle" value="$(arg vehicle)"/>
+      <arg name="ID" value="$(arg ID)"/>
+      <arg name="ID_in_group" value="$(arg ID_in_group)"/>
+    </include>
+    
+  </group> -->
+
+</launch>
