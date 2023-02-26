@@ -1,6 +1,7 @@
 #include "mockamap/maps.hpp"
 
 #include <vector>
+#include <queue>
 #include <algorithm>
 #include <iostream>
 #include <random>
@@ -156,6 +157,13 @@ void Maps::randomMapGenerate() {
   pcl2ros();
 }
 
+void Maps::ruggedMapGenerate() {
+  RuggedMap rugmap(info.sizeX, info.sizeY, info.sizeZ, info.seed, info.scale);
+  rugmap.diamond_square_algorithm();
+  rugmap.generate_crater();
+  rugmap.generate_rock();
+}
+
 Maps::Maps() {}
 
 Maps::BasicInfo Maps::getInfo() const{
@@ -181,4 +189,32 @@ void Maps::generate(int type) {
       std::srand(info.seed);
       break;
   }
+}
+
+RuggedMap::RuggedMap(int _x, int _y, int _z, int _seed, double _scale) {
+  sizeX = _x;
+  sizeY = _y;
+  sizeZ = _z;
+  seed = _seed;
+  scale = _scale;
+  buffer_size = sizeX * sizeY * sizeY;
+  map_buffer.resize(buffer_size);
+  vis.resize(buffer_size);
+}
+
+void RuggedMap::diamond_square_algorithm() {
+  std::queue<node> q;
+  int x_l = -sizeX / (2 * scale);
+  int x_h =  sizeX / (2 * scale);
+  int y_l = -sizeY / (2 * scale);
+  int y_h =  sizeY / (2 * scale);
+  q.push(node(x_l, x_h, y_l, y_h, smoothness));
+
+
+}
+void RuggedMap::generate_crater() {
+
+}
+void RuggedMap::generate_rock() {
+
 }
