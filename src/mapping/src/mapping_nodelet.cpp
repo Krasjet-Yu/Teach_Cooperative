@@ -105,8 +105,8 @@ class Nodelet : public nodelet::Nodelet {
   SynchronizerPointCloudOdom sync_pc_odom_;
 
   ros::Timer vis_timer_;
-  ros::Publisher gridmap_inflate_pub_, local_pc_pub_, pcl_pub_;
-  ros::Publisher vis_map_pub_, vis_map_inf_pub_;
+  ros::Publisher occ_inf_map_pub_, pcl_pub_;
+  ros::Publisher gridmap_pub_, gridmap_inflate_pub_;
 
   // NOTE just for global map in simulation
   ros::Timer global_map_timer_;
@@ -216,30 +216,11 @@ class Nodelet : public nodelet::Nodelet {
       target_lock_.clear();
     }
 
-    // TODO pub local map
-    // sensor_msgs::PointCloud2 pc_msg;
-    // pcl::PointCloud<pcl::PointXYZ> pcd;
-    // pcl::PointXYZ pt;
-    // std::vector<Eigen::Vector3d> mask_pts_ =  obs_pts;
-    // for (const auto p : mask_pts_) {
-    //   pt.x = p.x();
-    //   pt.y = p.y();
-    //   pt.z = p.z();
-    //   pcd.push_back(pt);
-    // }
-    // pcd.width = pcd.points.size();
-    // pcd.height = 1;
-    // pcd.is_dense = true;
-    // pcl::toROSMsg(pcd, pc_msg);
-    // pc_msg.header.frame_id = "world";
-    // local_pc_pub_.publish(pc_msg);
-    // std::cout << "publish local points " << std::endl;
-
     quadrotor_msgs::OccMap3d gridmap_msg;
     gridmap_msg.header.frame_id = "world";
     gridmap_msg.header.stamp = ros::Time::now();
     gridmap_.to_msg(gridmap_msg);
-    gridmap_inflate_pub_.publish(gridmap_msg);
+    occ_inf_map_pub_.publish(gridmap_msg);
     // std::cout << "publish gridmap inflate " << std::endl;
 
     callback_lock_.clear();
@@ -279,7 +260,7 @@ class Nodelet : public nodelet::Nodelet {
     gridmap_msg.header.frame_id = "world";
     gridmap_msg.header.stamp = ros::Time::now();
     gridmap_.to_msg(gridmap_msg);
-    gridmap_inflate_pub_.publish(gridmap_msg);
+    occ_inf_map_pub_.publish(gridmap_msg);
     // std::cout << "publish gridmap inflate " << std::endl;
 
     callback_lock_.clear();
@@ -318,102 +299,35 @@ class Nodelet : public nodelet::Nodelet {
     }
     quadrotor_msgs::OccMap3d gridmap_msg;
     gridmap_.to_msg(gridmap_msg);
-    gridmap_inflate_pub_.publish(gridmap_msg);
+    occ_inf_map_pub_.publish(gridmap_msg);
   }
 
-  void visCallback(const ros::TimerEvent & /*event*/)
+
+  void visCallback(const ros::TimerEvent & even)
   {
-    publishMapInflate(true);
+    publishMapInflate(false);
     publishMap();
   }
 
-  void publishMapInflate(bool all_info) {
-    pcl::PointXYZ pt;
-    pcl::PointCloud<pcl::PointXYZ> cloud;
-
-    double max_x, max_y, max_z, min_x, min_y, min_z;
-
-    min_x = map_max_boundary(0);
-    min_y = map_max_boundary(1);
-    min_z = map_max_boundary(2);
-
-    max_x = map_min_boundary(0);
-    max_y = map_min_boundary(1);
-    max_z = map_min_boundary(2);
-
-    local_bound_max_ = gridmap_.pos2idx(Eigen::Vector3d(max_x, max_y, max_z));
-    local_bound_min_ = gridmap_.pos2idx(Eigen::Vector3d(min_x, min_y, min_z));
-    Eigen::Vector3i min_cut = local_bound_min_;
-    Eigen::Vector3i max_cut = local_bound_max_;
-
-    for (int x = min_cut(0); x <= max_cut(0); ++x)
-      for (int y = min_cut(1); y <= max_cut(1); ++y)
-        for (int z = min_cut(2); z <= max_cut(2); ++z)
-        {
-          if (gridmap_.isOccupied(Eigen::Vector3i(x, y, z))) {
-            Eigen::Vector3d pos;
-            pos = gridmap_.idx2pos(Eigen::Vector3i(x, y, z));
-            // if (pos(2) > mp_.visualization_truncate_height_)
-            //   continue;
-            pt.x = pos(0);
-            pt.y = pos(1);
-            pt.z = pos(2);
-            cloud.push_back(pt);
-          }
-        }
-    cloud.width = cloud.points.size();
-    cloud.height = 1;
-    cloud.is_dense = true;
-    cloud.header.frame_id = "world";
-    sensor_msgs::PointCloud2 cloud_msg;
-
-    pcl::toROSMsg(cloud, cloud_msg);
-    vis_map_inf_pub_.publish(cloud_msg);
+  void publishMapInflate(bool remove_floor_ceil_) {
+    sensor_msgs::PointCloud2 grid_inf_cloud;
+    if (remove_floor_ceil_) {
+      gridmap_.occ2pc(grid_inf_cloud, 0.5, 2.5);
+    } else {
+      gridmap_.occ2pc(grid_inf_cloud);
+    }
+    grid_inf_cloud.header.frame_id = "world";
+    gridmap_inflate_pub_.publish(grid_inf_cloud);
   }
 
   void publishMap() {
-    pcl::PointXYZ pt;
-    pcl::PointCloud<pcl::PointXYZ> cloud;
-
-    double max_x, max_y, max_z, min_x, min_y, min_z;
-
-    min_x = map_max_boundary(0);
-    min_y = map_max_boundary(1);
-    min_z = map_max_boundary(2);
-
-    max_x = map_min_boundary(0);
-    max_y = map_min_boundary(1);
-    max_z = map_min_boundary(2);
-
-    local_bound_max_ = gridmap_.pos2idx(Eigen::Vector3d(max_x, max_y, max_z));
-    local_bound_min_ = gridmap_.pos2idx(Eigen::Vector3d(min_x, min_y, min_z));
-    Eigen::Vector3i min_cut = local_bound_min_;
-    Eigen::Vector3i max_cut = local_bound_max_;
-
-    for (int x = min_cut(0); x <= max_cut(0); ++x)
-      for (int y = min_cut(1); y <= max_cut(1); ++y)
-        for (int z = min_cut(2); z <= max_cut(2); ++z)
-        {
-          if (gridmap_.isProbOccupied(Eigen::Vector3i(x, y, z))) {
-            Eigen::Vector3d pos;
-            pos = gridmap_.idx2pos(Eigen::Vector3i(x, y, z));
-            // if (pos(2) > mp_.visualization_truncate_height_)
-            //   continue;
-            pt.x = pos(0);
-            pt.y = pos(1);
-            pt.z = pos(2);
-            cloud.push_back(pt);
-          }
-        }
-    cloud.width = cloud.points.size();
-    cloud.height = 1;
-    cloud.is_dense = true;
-    cloud.header.frame_id = "world";
-    sensor_msgs::PointCloud2 cloud_msg;
-
-    pcl::toROSMsg(cloud, cloud_msg);
-    vis_map_pub_.publish(cloud_msg);
+    // gridmap.from_msg(*msgPtr);
+    sensor_msgs::PointCloud2 grid_cloud;
+    gridmap_.occ2pc(grid_cloud);
+    grid_cloud.header.frame_id = "world";
+    gridmap_pub_.publish(grid_cloud);
   }
+
 
   void init(ros::NodeHandle& nh) {
     // set parameters of mapping
@@ -432,8 +346,7 @@ class Nodelet : public nodelet::Nodelet {
     if (nh.param<std::vector<double>>("laser2body_p", tmp, std::vector<double>())) {
       laser2body_p_ = Eigen::Map<const Eigen::Matrix<double, -1, -1, Eigen::RowMajor>>(tmp.data(), 3, 1);
     }
-    // std::cout << "R: \n" << cam2body_R_ << std::endl;
-    // std::cout << "p: \n" << cam2body_p_ << std::endl;
+
     double res;
 
     // NOTE whether to use global map
@@ -490,12 +403,12 @@ class Nodelet : public nodelet::Nodelet {
     // use mask parameter
     nh.getParam("use_mask", use_mask_);
 
-    gridmap_inflate_pub_ = nh.advertise<quadrotor_msgs::OccMap3d>("gridmap_inflate", 1);
-    vis_map_pub_ = nh.advertise<sensor_msgs::PointCloud2>("vis_occupancy", 10);
-    vis_map_inf_pub_ = nh.advertise<sensor_msgs::PointCloud2>("vis_occupancy_inflate", 10);
+    occ_inf_map_pub_ = nh.advertise<quadrotor_msgs::OccMap3d>("occupancy_inflate", 1);
+    gridmap_pub_ = nh.advertise<sensor_msgs::PointCloud2>("gridmap", 10);
+    gridmap_inflate_pub_ = nh.advertise<sensor_msgs::PointCloud2>("gridmap_inflate", 10);
 
-    local_pc_pub_ = nh.advertise<sensor_msgs::PointCloud2>("local_pointcloud", 1);
     pcl_pub_ = nh.advertise<sensor_msgs::PointCloud2>("mask_cloud", 10);
+
     if (sensor_type_ == std::string("camera")) {
       if (pose_type_ == POSE_STAMPED) {
         // TODO: pose and odom
@@ -517,7 +430,7 @@ class Nodelet : public nodelet::Nodelet {
         global_map_timer_ = nh.createTimer(ros::Duration(1.0), &Nodelet::global_map_timer_callback, this);
       } 
       else if (pose_type_ == ODOMETRY) {
-        local_pc_sub_.reset(new message_filters::Subscriber<sensor_msgs::PointCloud2>(nh, "sense_map", 50));
+        local_pc_sub_.reset(new message_filters::Subscriber<sensor_msgs::PointCloud2>(nh, "sense_cloud", 50));
         odom_sub_.reset(new message_filters::Subscriber<nav_msgs::Odometry>(nh, "odom", 100, ros::TransportHints().tcpNoDelay()));
         sync_pc_odom_.reset(new message_filters::Synchronizer<SyncPolicyPointCloudOdom>(
             SyncPolicyPointCloudOdom(100), *local_pc_sub_, *odom_sub_));
@@ -525,7 +438,7 @@ class Nodelet : public nodelet::Nodelet {
       }
     }
 
-    vis_timer_ = nh.createTimer(ros::Duration(0.11), &Nodelet::visCallback, this);
+    // vis_timer_ = nh.createTimer(ros::Duration(0.11), &Nodelet::visCallback, this);
 
     if (use_mask_) {
       target_odom_sub_ = nh.subscribe<nav_msgs::Odometry>("target", 1, &Nodelet::target_odom_callback, this, ros::TransportHints().tcpNoDelay());

@@ -19,10 +19,10 @@
 
     <node pkg="odom_visualization" name="odom_visualization" type="odom_visualization" output="screen">
       <remap from="~odom" to="odom" />
-      <!-- <param name="cross_config" value="false"/>
+      <param name="cross_config" value="true"/>
       <param name="mesh_resource" value="package://odom_visualization/meshes/leap.dae"/>
-      <param name="robot_scale" value="0.005"/> -->
-      <param name="robot_scale" value="1.0"/>
+      <param name="robot_scale" value="0.005"/>
+      <!-- <param name="robot_scale" value="1.0"/> -->
     </node>
   </group>
 

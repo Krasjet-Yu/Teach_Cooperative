@@ -43,6 +43,7 @@
     <remap from="~global_map" to="/global_map"/>
     <remap from="~odometry" to="odom"/>
     <remap from="~depth" to="depth"/>
+    <remap from="~sense_cloud" to="sense_cloud"/>
   </node>
 
 </launch>

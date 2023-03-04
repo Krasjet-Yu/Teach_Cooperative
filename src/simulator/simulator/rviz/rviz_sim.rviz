@@ -8,13 +8,15 @@ Panels:
         - /ugv01
         - /ugv01/mapping1
         - /ugv01/mapping1/gridmap1
+        - /ugv01/planning1/PolyhedronArray1
+        - /ugv01/odom_vis1
         - /drone01
         - /drone01/mapping1
         - /drone01/planning1/PolyhedronArray1
         - /drone11/planning1/traj1
         - /drone11/odom_vis1/drone1
         - /Odometry1/Shape1
-      Splitter Ratio: 0.46234309673309326
+      Splitter Ratio: 0.46176469326019287
     Tree Height: 813
   - Class: rviz/Selection
     Name: Selection
@@ -257,7 +259,7 @@ Visualization Manager:
               Queue Size: 10
               Scale: 0.009999999776482582
               State: Both
-              Topic: /target/planning/polyhedra
+              Topic: /ugv0/planning/polyhedra
               Unreliable: false
               Value: false
               VsColor: 0; 255; 0
@@ -311,7 +313,7 @@ Visualization Manager:
               Radius: 0.029999999329447746
               Shaft Diameter: 0.10000000149011612
               Shaft Length: 0.10000000149011612
-              Topic: /target/planning/astar
+              Topic: /ugv0/odom_visualization/path
               Unreliable: false
               Value: false
             - Alpha: 1
@@ -391,7 +393,7 @@ Visualization Manager:
               Radius: 0.029999999329447746
               Shaft Diameter: 0.10000000149011612
               Shaft Length: 0.10000000149011612
-              Topic: /target/odom_visualization/path
+              Topic: /ugv0/odom_visualization/path
               Unreliable: false
               Value: false
             - Class: rviz/Marker
@@ -975,7 +977,7 @@ Visualization Manager:
               Marker Topic: /drone0/odom_visualization/robot
               Name: drone
               Namespaces:
-                mesh: true
+                {}
               Queue Size: 100
               Value: true
           Enabled: true
