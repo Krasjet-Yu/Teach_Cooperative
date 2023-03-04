@@ -5,17 +5,16 @@
 git clone https://github.com/Krasjet-Yu/Teach_Cooperative.git
 cd Teach_Cooperative
 catkin_make
-source devel/setup.zsh
+source devel/setup.bash
 roslaunch simulator rviz_sim.launch
 ```
 
 >Load Robot Model and Perceptual Map
 ```
 source devel/setup.bash
-roslaunch simulator  cooperative_simulator.launch
+roslaunch simulator cooperative_simulator.launch
 ```
    
-
 >Struct
 ```
 ├── mapping
