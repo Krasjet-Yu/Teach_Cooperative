@@ -41,11 +41,11 @@
 
     <node pkg="odom_visualization" name="odom_visualization" type="odom_visualization_car" output="screen">
       <remap from="~odom" to="odom" />
-      <!-- <param name="cross_config" value="false"/>
+      <param name="cross_config" value="true"/>
       <param name="mesh_resource" value="package://odom_visualization/meshes/yutu.dae"/>
-      <param name="robot_scale" value="0.001"/> -->
-      <param name="mesh_resource" value="package://odom_visualization/meshes/car.dae"/>
-      <param name="robot_scale" value="0.1"/>
+      <param name="robot_scale" value="0.001"/>
+      <!-- <param name="mesh_resource" value="package://odom_visualization/meshes/car.dae"/>
+      <param name="robot_scale" value="0.1"/> -->
     </node>
   </group>
 
