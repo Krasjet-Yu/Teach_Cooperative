@@ -18,10 +18,8 @@
 using namespace std;
 using namespace Eigen;
 
-ros::Publisher pub_cloud;
-
-sensor_msgs::PointCloud2 local_map_pcl;
-sensor_msgs::PointCloud2 local_depth_pcl;
+ros::Publisher sense_cloud_pub;
+ros::Publisher local_cloud_pub;
 
 ros::Subscriber odom_sub;
 ros::Subscriber global_map_sub, local_map_sub;
@@ -32,6 +30,10 @@ bool has_global_map(false);
 bool has_local_map(false);
 bool has_odom(false);
 
+std::string sensor;
+Matrix4d laser2body;
+Matrix4d laser2world;
+Eigen::Quaterniond laser2world_quat;
 nav_msgs::Odometry _odom;
 
 double sensing_horizon, sensing_rate, estimation_rate;
@@ -43,11 +45,39 @@ void rcvOdometryCallbck(const nav_msgs::Odometry& odom) {
     return;*/
   has_odom = true;
   _odom = odom;
+  Matrix4d Pose_receive = Matrix4d::Identity();
+
+  Eigen::Vector3d request_position;
+  Eigen::Quaterniond request_pose;
+  request_position.x() = odom.pose.pose.position.x;
+  request_position.y() = odom.pose.pose.position.y;
+  request_position.z() = odom.pose.pose.position.z;
+  request_pose.x() = odom.pose.pose.orientation.x;
+  request_pose.y() = odom.pose.pose.orientation.y;
+  request_pose.z() = odom.pose.pose.orientation.z;
+  request_pose.w() = odom.pose.pose.orientation.w;
+  Pose_receive.block<3, 3>(0, 0) = request_pose.toRotationMatrix();
+  Pose_receive(0, 3) = request_position(0);
+  Pose_receive(1, 3) = request_position(1);
+  Pose_receive(2, 3) = request_position(2);
+
+  Eigen::Matrix4d body_pose = Pose_receive;
+  //convert to laser pose
+  laser2world = body_pose * laser2body;
+  // laser2world_quat = laser2world.block<3, 3>(0, 0);
+  // laser2world_rot = laser2world.block<3, 3>(0, 0);
+  // laser2world_pos = Eigen::Vector3d(laser2world(0, 3), laser2world{1, 3}, laser2world(2, 3));
+
+  last_odom_stamp = odom.header.stamp;
+
+  // last_pose_world(0) = odom.pose.pose.position.x;
+  // last_pose_world(1) = odom.pose.pose.position.y;
+  // last_pose_world(2) = odom.pose.pose.position.z;
 }
 
-pcl::PointCloud<pcl::PointXYZ> _cloud_all_map, _local_map;
+pcl::PointCloud<pcl::PointXYZ> _cloud_all_map, _local_map, _sense_map;
 pcl::VoxelGrid<pcl::PointXYZ> _voxel_sampler;
-sensor_msgs::PointCloud2 _local_map_pcd;
+sensor_msgs::PointCloud2 _local_map_pcd, _sense_map_pcd;
 
 pcl::search::KdTree<pcl::PointXYZ> _kdtreeLocalMap;
 vector<int> _pointIdxRadiusSearch;
@@ -92,6 +122,7 @@ void renderSensedPoints(const ros::TimerEvent& event) {
   _pointRadiusSquaredDistance.clear();
 
   pcl::PointXYZ pt;
+  pcl::PointXYZ pt_in_laser;
   if (_kdtreeLocalMap.radiusSearch(searchPoint, sensing_horizon,
                                    _pointIdxRadiusSearch,
                                    _pointRadiusSquaredDistance) > 0) {
@@ -108,7 +139,15 @@ void renderSensedPoints(const ros::TimerEvent& event) {
 
       if (pt_vec.dot(yaw_vec) < 0) continue;
 
+      // cloud point in world coordinate for visualization
       _local_map.points.push_back(pt);
+      // cloud point to laser coordinate
+      Eigen::Vector4d pose_in_world(pt.x, pt.y, pt.z, 1.0);
+      Eigen::Vector4d pose_in_laser = laser2world.inverse() * pose_in_world;
+      pt_in_laser.x = pose_in_laser(0);
+      pt_in_laser.y = pose_in_laser(1);
+      pt_in_laser.z = pose_in_laser(2);
+      _sense_map.points.push_back(pt_in_laser);
     }
   } else {
     return;
@@ -121,7 +160,16 @@ void renderSensedPoints(const ros::TimerEvent& event) {
   pcl::toROSMsg(_local_map, _local_map_pcd);
   _local_map_pcd.header.frame_id = "world";
 
-  pub_cloud.publish(_local_map_pcd);
+  local_cloud_pub.publish(_local_map_pcd);
+
+  _sense_map.width = _sense_map.points.size();
+  _sense_map.height = 1;
+  _sense_map.is_dense = true;
+
+  pcl::toROSMsg(_sense_map, _sense_map_pcd);
+  _sense_map_pcd.header.frame_id = sensor;
+
+  sense_cloud_pub.publish(_sense_map_pcd);
 }
 
 void rcvLocalPointCloudCallBack(
@@ -136,6 +184,12 @@ int main(int argc, char** argv) {
   nh.getParam("sensing_horizon", sensing_horizon);
   nh.getParam("sensing_rate", sensing_rate);
   nh.getParam("estimation_rate", estimation_rate);
+  nh.getParam("sensor", sensor);
+
+  laser2body << 0.0, 0.0, 1.0, 0.0,
+                -1.0, 0.0, 0.0, 0.0,
+                0.0, -1.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, 1.0;
 
   // subscribe point cloud
   global_map_sub = nh.subscribe("global_map", 1, rcvGlobalPointCloudCallBack);
@@ -143,8 +197,11 @@ int main(int argc, char** argv) {
   odom_sub = nh.subscribe("odometry", 50, rcvOdometryCallbck);
 
   // publisher depth image and color image
-  pub_cloud =
+  sense_cloud_pub =
+      nh.advertise<sensor_msgs::PointCloud2>("sense_cloud", 10);
+  local_cloud_pub =
       nh.advertise<sensor_msgs::PointCloud2>("local_cloud", 10);
+  
 
   double sensing_duration = 1.0 / sensing_rate * 2.5;
 

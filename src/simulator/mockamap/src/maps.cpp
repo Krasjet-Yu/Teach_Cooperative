@@ -178,6 +178,7 @@ void Maps::generate(int type) {
   switch(type) {
     default:
     case 1:
+      // TODO: 
       break;
     case 2:
       randomMapGenerate();

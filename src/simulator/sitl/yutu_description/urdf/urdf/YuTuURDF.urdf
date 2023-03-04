@@ -98,7 +98,7 @@
       xyz="0 0 0" />
   </joint>
   <link
-    name="lidar_Link">
+    name="laser_Link">
     <inertial>
       <origin
         xyz="0.0113215162879861 0.000897637918713154 -5.46175478177702E-06"
@@ -119,7 +119,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://yutu_description/meshes/lidar_Link.STL" />
+          filename="package://yutu_description/meshes/laser_Link.STL" />
       </geometry>
       <material
         name="">
@@ -133,12 +133,12 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://yutu_description/meshes/lidar_Link.STL" />
+          filename="package://yutu_description/meshes/laser_Link.STL" />
       </geometry>
     </collision>
   </link>
   <joint
-    name="lidar_joint"
+    name="laser_joint"
     type="fixed">
     <origin
       xyz="0.393474958757372 0.00225655709560415 0.67"
@@ -146,7 +146,7 @@
     <parent
       link="base_link" />
     <child
-      link="lidar_Link" />
+      link="laser_Link" />
     <axis
       xyz="0 0 0" />
   </joint>

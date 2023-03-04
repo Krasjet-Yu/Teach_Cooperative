@@ -2,6 +2,7 @@
 
 >Preparation and Visualization:
 ```
+git clone https://github.com/Krasjet-Yu/Teach_Cooperative.git
 cd Teach_Cooperative
 catkin_make
 source devel/setup.zsh

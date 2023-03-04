@@ -588,7 +588,7 @@ int main(int argc, char** argv) {
   sensorPub = n.advertise<visualization_msgs::Marker>("sensor", 100, true);
   meshPub = n.advertise<visualization_msgs::Marker>("robot", 100, true);
   heightPub = n.advertise<sensor_msgs::Range>("height", 100, true);
-  // TODO: add lidar visual
+  // TODO: add laser visual
   fov_pub_ = n.advertise<visualization_msgs::MarkerArray>("fov_visual", 5);
   tf::TransformBroadcaster b;
   broadcaster = &b;

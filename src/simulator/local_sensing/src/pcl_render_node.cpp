@@ -303,9 +303,9 @@ int main(int argc, char **argv) {
   //               0.0, 0.0, 0.0, 1.0;
 
   cam02body << 0.0, 0.0, 1.0, 0.0,
-      -1.0, 0.0, 0.0, 0.0,
-      0.0, -1.0, 0.0, 0.0,
-      0.0, 0.0, 0.0, 1.0;
+               -1.0, 0.0, 0.0, 0.0,
+               0.0, -1.0, 0.0, 0.0,
+               0.0, 0.0, 0.0, 1.0;
 
   //init cam2world transformation
   cam2world = Matrix4d::Identity();
