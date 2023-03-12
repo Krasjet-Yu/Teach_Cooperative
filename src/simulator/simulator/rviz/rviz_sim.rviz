@@ -7,17 +7,14 @@ Panels:
         - /Global Options1
         - /ugv01
         - /ugv01/mapping1
-        - /ugv01/mapping1/gridmap1
-        - /ugv01/planning1/PolyhedronArray1
-        - /ugv01/odom_vis1
+        - /ugv01/mapping1/local_inflate_map1
         - /drone01
         - /drone01/mapping1
-        - /drone01/planning1/PolyhedronArray1
         - /drone11/planning1/traj1
         - /drone11/odom_vis1/drone1
         - /Odometry1/Shape1
       Splitter Ratio: 0.46176469326019287
-    Tree Height: 813
+    Tree Height: 829
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Views
@@ -29,6 +26,11 @@ Panels:
     Name: Time
     SyncMode: 0
     SyncSource: world_map
+  - Class: rviz/Tool Properties
+    Expanded:
+      - /2D Nav Goal1
+    Name: Tool Properties
+    Splitter Ratio: 0.5
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -106,8 +108,8 @@ Visualization Manager:
             - Alpha: 1
               Autocompute Intensity Bounds: true
               Autocompute Value Bounds:
-                Max Value: 4.400000095367432
-                Min Value: 0
+                Max Value: -9999
+                Min Value: 9999
                 Value: true
               Axis: Z
               Channel Name: intensity
@@ -115,7 +117,7 @@ Visualization Manager:
               Color: 52; 101; 164
               Color Transformer: AxisColor
               Decay Time: 0
-              Enabled: false
+              Enabled: true
               Invert Rainbow: false
               Max Color: 255; 255; 255
               Min Color: 0; 0; 0
@@ -126,11 +128,11 @@ Visualization Manager:
               Size (Pixels): 3
               Size (m): 0.20000000298023224
               Style: Boxes
-              Topic: /ugv0/pcl_render_node/local_cloud
+              Topic: /ugv0/grid_map/occupancy_inflate
               Unreliable: false
               Use Fixed Frame: true
               Use rainbow: true
-              Value: false
+              Value: true
             - Alpha: 1
               Autocompute Intensity Bounds: true
               Autocompute Value Bounds:
@@ -143,11 +145,11 @@ Visualization Manager:
               Color: 114; 159; 207
               Color Transformer: FlatColor
               Decay Time: 0
-              Enabled: true
+              Enabled: false
               Invert Rainbow: false
               Max Color: 255; 255; 255
               Min Color: 0; 0; 0
-              Name: gridmap
+              Name: local_sense_map
               Position Transformer: XYZ
               Queue Size: 10
               Selectable: true
@@ -158,7 +160,7 @@ Visualization Manager:
               Unreliable: false
               Use Fixed Frame: true
               Use rainbow: true
-              Value: true
+              Value: false
           Enabled: true
           Name: mapping
         - Class: rviz/Group
@@ -250,20 +252,6 @@ Visualization Manager:
           Name: detecting
         - Class: rviz/Group
           Displays:
-            - Alpha: 0.20000000298023224
-              BoundColor: 255; 0; 0
-              Class: decomp_rviz_plugins/PolyhedronArray
-              Enabled: false
-              MeshColor: 0; 170; 255
-              Name: PolyhedronArray
-              Queue Size: 10
-              Scale: 0.009999999776482582
-              State: Both
-              Topic: /ugv0/planning/polyhedra
-              Unreliable: false
-              Value: false
-              VsColor: 0; 255; 0
-              VsScale: 1
             - Alpha: 1
               Autocompute Intensity Bounds: true
               Autocompute Value Bounds:
@@ -519,7 +507,7 @@ Visualization Manager:
               Color: 52; 101; 164
               Color Transformer: AxisColor
               Decay Time: 0
-              Enabled: true
+              Enabled: false
               Invert Rainbow: false
               Max Color: 255; 255; 255
               Min Color: 0; 0; 0
@@ -534,7 +522,7 @@ Visualization Manager:
               Unreliable: false
               Use Fixed Frame: true
               Use rainbow: true
-              Value: true
+              Value: false
             - Alpha: 1
               Autocompute Intensity Bounds: true
               Autocompute Value Bounds:
@@ -547,11 +535,11 @@ Visualization Manager:
               Color: 239; 41; 41
               Color Transformer: FlatColor
               Decay Time: 0
-              Enabled: true
+              Enabled: false
               Invert Rainbow: false
               Max Color: 255; 255; 255
               Min Color: 0; 0; 0
-              Name: local_gt_map
+              Name: local_sense_map
               Position Transformer: XYZ
               Queue Size: 10
               Selectable: true
@@ -562,7 +550,7 @@ Visualization Manager:
               Unreliable: false
               Use Fixed Frame: true
               Use rainbow: true
-              Value: true
+              Value: false
           Enabled: true
           Name: mapping
         - Class: rviz/Group
@@ -654,20 +642,6 @@ Visualization Manager:
           Name: detecting
         - Class: rviz/Group
           Displays:
-            - Alpha: 0.20000000298023224
-              BoundColor: 255; 0; 0
-              Class: decomp_rviz_plugins/PolyhedronArray
-              Enabled: true
-              MeshColor: 0; 170; 255
-              Name: PolyhedronArray
-              Queue Size: 10
-              Scale: 0.0010000000474974513
-              State: Both
-              Topic: /drone0/planning/polyhedra
-              Unreliable: false
-              Value: true
-              VsColor: 0; 255; 0
-              VsScale: 1
             - Alpha: 1
               Autocompute Intensity Bounds: true
               Autocompute Value Bounds:
@@ -977,7 +951,7 @@ Visualization Manager:
               Marker Topic: /drone0/odom_visualization/robot
               Name: drone
               Namespaces:
-                {}
+                mesh: true
               Queue Size: 100
               Value: true
           Enabled: true
@@ -1205,23 +1179,25 @@ Visualization Manager:
       Near Clip Distance: 0.009999999776482582
       Pitch: 0.7747966647148132
       Target Frame: world
-      Yaw: 3.382089853286743
+      Yaw: 3.377089738845825
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1027
+  Height: 1043
   Hide Left Dock: false
   Hide Right Dock: false
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001560000036afc020000000efb0000001200530065006c0065006300740069006f006e000000003d0000009b0000005c00fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afc0000003d0000036a000000c900fffffffa000000010100000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730000000000ffffffff0000000000000000fb000000100044006900730070006c00610079007301000000000000016a0000015600fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00540065006c0065006f0070000000024d0000009e0000000000000000fb0000000e005000430044005600690065007700000002b5000000ed0000000000000000fb0000000a0064006500700074006800000002170000018b0000000000000000fb0000000c00430061006d00650072006100000002da000000c80000000000000000fb0000000a0049006d00610067006500000002a8000000ff0000001600fffffffb0000000a0049006d00610067006501000002da000000c80000000000000000fb0000000a0049006d00610067006501000002da000000c80000000000000000000000010000012a0000036afc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003d0000036a000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073800000039fc0100000002fb0000000800540069006d0065010000000000000738000003bc00fffffffb0000000800540069006d00650100000000000004500000000000000000000004ac0000036a00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000026a0000037afc020000000ffb0000001200530065006c0065006300740069006f006e000000003d0000009b0000005c00fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afc0000003d0000037a000000c900fffffffa000000010100000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730000000000ffffffff0000009d00fffffffb000000100044006900730070006c00610079007301000000000000016a0000015600fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00540065006c0065006f0070000000024d0000009e0000000000000000fb0000000e005000430044005600690065007700000002b5000000ed0000000000000000fb0000000a0064006500700074006800000002170000018b0000000000000000fb0000000c00430061006d00650072006100000002da000000c80000000000000000fb0000000a0049006d00610067006500000002a8000000ff0000001600fffffffb0000000a0049006d00610067006501000002da000000c80000000000000000fb0000000a0049006d00610067006501000002da000000c80000000000000000fb0000001e0054006f006f006c002000500072006f0070006500720074006900650073010000030c000000ab0000000000000000000000010000012a0000037afc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003d0000037a000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000078000000039fc0100000002fb0000000800540069006d0065010000000000000780000003bc00fffffffb0000000800540069006d00650100000000000004500000000000000000000003e00000037a00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
     collapsed: false
+  Tool Properties:
+    collapsed: false
   Views:
     collapsed: false
-  Width: 1848
-  X: 72
-  Y: 27
+  Width: 1920
+  X: 0
+  Y: 0

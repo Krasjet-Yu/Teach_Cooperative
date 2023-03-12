@@ -9,7 +9,7 @@
       <param name="num_worker_threads" value="16"/>
     </node>
 
-    <include file="$(find simulator)/launch/uav_simulator.launch">
+    <include file="$(find simulator)/launch/leap_simulator.launch">
       <arg name="sensor" value="$(arg sensor)"/>
     </include>
 
@@ -17,13 +17,6 @@
       <arg name="sensor" value="$(arg sensor)"/>
     </include>
 
-    <node pkg="odom_visualization" name="odom_visualization" type="odom_visualization" output="screen">
-      <remap from="~odom" to="odom" />
-      <param name="cross_config" value="true"/>
-      <param name="mesh_resource" value="package://odom_visualization/meshes/leap.dae"/>
-      <param name="robot_scale" value="0.005"/>
-      <!-- <param name="robot_scale" value="1.0"/> -->
-    </node>
   </group>
 
   <group ns="ugv0">
@@ -31,7 +24,7 @@
       <param name="num_worker_threads" value="16"/>
     </node>
 
-    <include file="$(find simulator)/launch/ugv_simulator.launch">
+    <include file="$(find simulator)/launch/yutu_simulator.launch">
       <arg name="sensor" value="$(arg sensor)"/>
     </include>
 
@@ -39,14 +32,7 @@
       <arg name="sensor" value="$(arg sensor)"/>
     </include>
 
-    <node pkg="odom_visualization" name="odom_visualization" type="odom_visualization_car" output="screen">
-      <remap from="~odom" to="odom" />
-      <param name="cross_config" value="true"/>
-      <param name="mesh_resource" value="package://odom_visualization/meshes/yutu.dae"/>
-      <param name="robot_scale" value="0.001"/>
-      <!-- <param name="mesh_resource" value="package://odom_visualization/meshes/car.dae"/>
-      <param name="robot_scale" value="0.1"/> -->
-    </node>
+    
   </group>
 
 </launch>
