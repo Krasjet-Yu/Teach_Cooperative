@@ -60,16 +60,21 @@
     <param name="sensing_rate" value="30.0"/>
     <param name="estimation_rate" value="30.0"/>
     <param name="sensor" value="$(arg sensor)"/>
+    <param name="drone_nm"  value="$(arg group_name)"/>
+    <param name="drone_id" value="$(arg group_id)"/>
 
     <remap from="~global_map" to="/global_map"/>
     <remap from="~odometry" to="$(arg odometry_topic)"/>
     <remap from="~depth" to="depth"/>
     <remap from="~sense_cloud" to="sense_cloud"/>
+    <remap from="~local_cloud" to="local_cloud"/>
   </node>
 
   <node pkg="odom_visualization" name="odom_visualization" type="odom_visualization" output="screen">
     <remap from="~odom" to="$(arg odometry_topic)" />
     <param name="robot_scale" value="1.0"/>
+    <param name="drone_nm"  value="$(arg group_name)"/>
+    <param name="drone_id" value="$(arg group_id)"/>
   </node>
 
 </launch>

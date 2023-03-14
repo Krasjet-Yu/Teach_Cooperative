@@ -1191,7 +1191,7 @@ void GridMap::cloudCallbackTmp(const sensor_msgs::PointCloud2ConstPtr &cloud)
 
   if (latest_cloud.points.size() == 0) 
   {
-    std::cout << "no lastest_cloud points!" << std::endl;
+    // std::cout << "no lastest_cloud points!" << std::endl;
     return;
   }
 

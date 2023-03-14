@@ -20,6 +20,9 @@
 using namespace arma;
 using namespace std;
 
+string _drone_nm;
+int _drone_id;
+
 static string mesh_resource;
 static double color_r, color_g, color_b, color_a, cov_scale, scale;
 bool cross_config = false;
@@ -112,7 +115,7 @@ void fov_visual_init(std::string msg_frame_id) {
   markerEdge_fov.color.r = 0.5f;
   markerEdge_fov.color.g = 0.0;
   markerEdge_fov.color.b = 0.0;
-  markerEdge_fov.color.a = 1;
+  markerEdge_fov.color.a = 1;  // Don't forget to set the alpha!
 }
 
 void pub_fov_visual(Eigen::Vector3d& p, Eigen::Quaterniond& q) {
@@ -151,9 +154,6 @@ void pub_fov_visual(Eigen::Vector3d& p, Eigen::Quaterniond& q) {
 
   markerEdge_fov.points.push_back(fov_node_marker[0]);
   markerEdge_fov.points.push_back(fov_node_marker[4]);
-
-  markerEdge_fov.points.push_back(fov_node_marker[0]);
-  markerEdge_fov.points.push_back(fov_node_marker[1]);
 
   markerEdge_fov.points.push_back(fov_node_marker[1]);
   markerEdge_fov.points.push_back(fov_node_marker[2]);
@@ -509,10 +509,15 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr& msg) {
     colvec q90 = R_to_quaternion(ypr_to_R(p90));
     transform90.setRotation(tf::Quaternion(q90(1), q90(2), q90(3), q90(0)));
 
-    broadcaster->sendTransform(tf::StampedTransform(transform, msg->header.stamp, string("world"), string("/base")));
-    broadcaster->sendTransform(tf::StampedTransform(transform45, msg->header.stamp, string("/base"), string("/laser")));
-    broadcaster->sendTransform(tf::StampedTransform(transform45, msg->header.stamp, string("/base"), string("/vision")));
-    broadcaster->sendTransform(tf::StampedTransform(transform90, msg->header.stamp, string("/base"), string("/height")));
+    string base_s   = _drone_id == -1 ? string("base")   : string(_drone_nm) + std::to_string(_drone_id) + string("_base");
+    string laser_s  = _drone_id == -1 ? string("laser")  : string(_drone_nm) + std::to_string(_drone_id) + string("_laser");
+    string vision_s = _drone_id == -1 ? string("vision") : string(_drone_nm) + std::to_string(_drone_id) + string("_vision");
+    string height_s = _drone_id == -1 ? string("height") : string(_drone_nm) + std::to_string(_drone_id) + string("_height");
+
+    broadcaster->sendTransform(tf::StampedTransform(transform,   msg->header.stamp, string("world"), base_s));      
+    broadcaster->sendTransform(tf::StampedTransform(transform45, msg->header.stamp, base_s, laser_s));          
+    broadcaster->sendTransform(tf::StampedTransform(transform45, msg->header.stamp, base_s, vision_s));          
+    broadcaster->sendTransform(tf::StampedTransform(transform90, msg->header.stamp, base_s, height_s));
   }
 }
 
@@ -584,18 +589,20 @@ int main(int argc, char** argv) {
   n.param("covariance_position", cov_pos, false);
   n.param("covariance_velocity", cov_vel, false);
   n.param("covariance_color", cov_color, false);
+  n.param("drone_nm",   _drone_nm, string(""));  
+  n.param("drone_id",   _drone_id, -1);  
 
   ros::Subscriber sub_odom = n.subscribe("odom", 100, odom_callback);
   ros::Subscriber sub_cmd = n.subscribe("cmd", 100, cmd_callback);
-  posePub = n.advertise<geometry_msgs::PoseStamped>("pose", 100, true);
-  pathPub = n.advertise<nav_msgs::Path>("path", 100, true);
-  velPub = n.advertise<visualization_msgs::Marker>("velocity", 100, true);
-  covPub = n.advertise<visualization_msgs::Marker>("covariance", 100, true);
+  posePub   = n.advertise<geometry_msgs::PoseStamped>("pose",                100, true);
+  pathPub   = n.advertise<nav_msgs::Path>(            "path",                100, true);
+  velPub    = n.advertise<visualization_msgs::Marker>("velocity",            100, true);
+  covPub    = n.advertise<visualization_msgs::Marker>("covariance",          100, true);
   covVelPub = n.advertise<visualization_msgs::Marker>("covariance_velocity", 100, true);
-  trajPub = n.advertise<visualization_msgs::Marker>("trajectory", 100, true);
-  sensorPub = n.advertise<visualization_msgs::Marker>("sensor", 100, true);
-  meshPub = n.advertise<visualization_msgs::Marker>("robot", 100, true);
-  heightPub = n.advertise<sensor_msgs::Range>("height", 100, true);
+  trajPub   = n.advertise<visualization_msgs::Marker>("trajectory",          100, true);
+  sensorPub = n.advertise<visualization_msgs::Marker>("sensor",              100, true);
+  meshPub   = n.advertise<visualization_msgs::Marker>("robot",               100, true);  
+  heightPub = n.advertise<sensor_msgs::Range>(        "height",              100, true);  
   fov_pub_ = n.advertise<visualization_msgs::MarkerArray>("fov_visual", 5);
   tf::TransformBroadcaster b;
   broadcaster = &b;

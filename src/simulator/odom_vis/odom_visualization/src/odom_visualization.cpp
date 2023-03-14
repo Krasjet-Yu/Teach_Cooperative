@@ -20,6 +20,8 @@
 using namespace arma;
 using namespace std;
 
+int _drone_id;
+string _drone_nm;
 static string mesh_resource;
 static double color_r, color_g, color_b, color_a, cov_scale, scale;
 bool cross_config = false;
@@ -503,10 +505,15 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr& msg) {
     colvec q90 = R_to_quaternion(ypr_to_R(p90));
     transform90.setRotation(tf::Quaternion(q90(1), q90(2), q90(3), q90(0)));
 
-    broadcaster->sendTransform(tf::StampedTransform(transform, msg->header.stamp, string("world"), string("/base")));
-    broadcaster->sendTransform(tf::StampedTransform(transform45, msg->header.stamp, string("/base"), string("/laser")));
-    broadcaster->sendTransform(tf::StampedTransform(transform45, msg->header.stamp, string("/base"), string("/vision")));
-    broadcaster->sendTransform(tf::StampedTransform(transform90, msg->header.stamp, string("/base"), string("/height")));
+    string base_s   = _drone_id == -1 ? string("base")   : string(_drone_nm) + std::to_string(_drone_id) + string("_base");
+    string laser_s  = _drone_id == -1 ? string("laser")  : string(_drone_nm) + std::to_string(_drone_id) + string("_laser");
+    string vision_s = _drone_id == -1 ? string("vision") : string(_drone_nm) + std::to_string(_drone_id) + string("_vision");
+    string height_s = _drone_id == -1 ? string("height") : string(_drone_nm) + std::to_string(_drone_id) + string("_height");
+
+    broadcaster->sendTransform(tf::StampedTransform(transform,   msg->header.stamp, string("world"), base_s));      
+    broadcaster->sendTransform(tf::StampedTransform(transform45, msg->header.stamp, base_s, laser_s));          
+    broadcaster->sendTransform(tf::StampedTransform(transform45, msg->header.stamp, base_s, vision_s));          
+    broadcaster->sendTransform(tf::StampedTransform(transform90, msg->header.stamp, base_s, height_s));
   }
 }
 
@@ -578,6 +585,8 @@ int main(int argc, char** argv) {
   n.param("covariance_position", cov_pos, false);
   n.param("covariance_velocity", cov_vel, false);
   n.param("covariance_color", cov_color, false);
+  n.param("drone_nm",   _drone_nm, string(""));  
+  n.param("drone_id",   _drone_id, -1);  
 
   ros::Subscriber sub_odom = n.subscribe("odom", 100, odom_callback);
   ros::Subscriber sub_cmd = n.subscribe("cmd", 100, cmd_callback);

@@ -20,7 +20,8 @@ include_directories(
 
 add_executable(
   pcl_render_node
-  src/pointcloud_render_node.cpp
+  # src/pointcloud_render_node.cpp
+  src/laser_render_node.cpp
 )
 
 target_link_libraries( pcl_render_node
