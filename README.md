@@ -12,7 +12,7 @@ roslaunch simulator rviz_sim.launch
 >Load Robot Model and Perceptual Map
 ```
 source devel/setup.bash
-roslaunch simulator cooperative_simulator.launch
+roslaunch simulator cooperative_search.launch
 ```
    
 >Struct
@@ -25,14 +25,16 @@ roslaunch simulator cooperative_simulator.launch
 ├── planning
 │   ├── TODO: UGV_Planning
 │   ├── TODO: UAV_Planning
-├── quadrotor_msgs
-│   ├── msg
 └── simulator
+    ├── fake_drone
     ├── local_sensing
     ├── mockamap
     ├── odom_vis
     ├── simulator
     ├── sitl
     ├── so3_controller
-    └── so3_quadrotor
+    ├── so3_quadrotor
+    └── Utils
+        ├── quadrotor_msgs
+        └── waypoint_generator
 ```
