@@ -21,6 +21,7 @@ using std::vector;
 
 int _drone_id;
 std::string _drone_nm;
+double _tf45;
 
 ros::Publisher _sensor_range_publisher;
 ros::Publisher _pub_cloud;
@@ -45,6 +46,8 @@ Eigen::MatrixXi _idx_map;
 Eigen::MatrixXd _dis_map;
 Eigen::Matrix4d laser2body;
 Eigen::Matrix4d laser2world;
+Eigen::Matrix3d laser2world_rot;
+Eigen::Vector3d laser2world_pos;
 
 pcl::PointCloud<pcl::PointXYZ> _cloud_all_map, _sense_map, _local_map;
 pcl::VoxelGrid<pcl::PointXYZ> _voxel_sampler;
@@ -99,9 +102,9 @@ inline bool pt2LaserIdx(Eigen::Vector2i &idx,
   // std::cout << "laser_R.col(2) is : " << laser_R.col(2) << std::endl;
   // std::cout << "dis_laser_to_inter_p is : " << dis_laser_to_inter_p << std::endl;
   double vtc_rad = std::atan2((pt - laser_t).dot(laser_R.col(2)), dis_laser_to_inter_p);
-  std::cout << "vtc_rad deg: " << vtc_rad * 180.0 / M_PI << std::endl;
-  std::cout << "vtc_rad rad:" << vtc_rad << std::endl;
-  std::cout << "_half_vtc_resolution_and_half_range : " << _half_vtc_resolution_and_half_range << std::endl;
+  // std::cout << "vtc_rad deg: " << vtc_rad * 180.0 / M_PI << std::endl;
+  // std::cout << "vtc_rad rad:" << vtc_rad << std::endl;
+  // std::cout << "_half_vtc_resolution_and_half_range : " << _half_vtc_resolution_and_half_range << std::endl;
   if (std::fabs(vtc_rad) >= _half_vtc_resolution_and_half_range)
     return false;
 
@@ -214,6 +217,11 @@ void visRange()
     p_msg.x = _sensing_horizon * cos(theta);
     p_msg.y = _sensing_horizon * sin(theta);
     p_msg.z = _sensing_horizon * sin(_half_vtc_resolution_and_half_range);
+    if (_tf45) 
+    {
+      Eigen::Matrix3d laser2body_rot = laser2world.block<3, 3>(0, 0);
+      laser2world_pos = Eigen::Vector3d(laser2world(0, 3), laser2world(1, 3), laser2world(2, 3));
+    }
     arc_msg.points.push_back(p_msg);
     p_msg.z *= -1.0;
     arc_msg_down.points.push_back(p_msg);
@@ -265,33 +273,8 @@ void rcvOdometryCallbck(const nav_msgs::Odometry::ConstPtr &odom)
   //convert to laser pose
   laser2world = body_pose * laser2body;
   // laser2world_quat = laser2world.block<3, 3>(0, 0);
-  // laser2world_rot = laser2world.block<3, 3>(0, 0);
-  // laser2world_pos = Eigen::Vector3d(laser2world(0, 3), laser2world(1, 3), laser2world(2, 3));
-
-  // last_odom_stamp = odom.header.stamp;
-
-  // last_pose_world(0) = _odom.pose.pose.position.x;
-  // last_pose_world(1) = _odom.pose.pose.position.y;
-  // last_pose_world(2) = _odom.pose.pose.position.z;
-
-  // maintain tf: world->laser
-  // static tf2_ros::TransformBroadcaster _br_world_laser;
-  // geometry_msgs::TransformStamped _transformStamped;
-  // _transformStamped.header.stamp = laser_odom->header.stamp;
-  // if (laser_odom->header.frame_id.size())
-  //   _transformStamped.header.frame_id = laser_odom->header.frame_id;
-  // else
-  //   _transformStamped.header.frame_id = "world";
-  // _transformStamped.child_frame_id = "laser";
-  // _transformStamped.transform.translation.x = laser_odom->pose.pose.position.x;
-  // _transformStamped.transform.translation.y = laser_odom->pose.pose.position.y;
-  // _transformStamped.transform.translation.z = laser_odom->pose.pose.position.z;
-  // _transformStamped.transform.rotation.x = laser_odom->pose.pose.orientation.x;
-  // _transformStamped.transform.rotation.y = laser_odom->pose.pose.orientation.y;
-  // _transformStamped.transform.rotation.z = laser_odom->pose.pose.orientation.z;
-  // _transformStamped.transform.rotation.w = laser_odom->pose.pose.orientation.w;
-  // _br_world_laser.sendTransform(_transformStamped);
-
+  laser2world_rot = laser2world.block<3, 3>(0, 0);
+  laser2world_pos = Eigen::Vector3d(laser2world(0, 3), laser2world(1, 3), laser2world(2, 3));
 
   // visualize sensor range
   visRange();
@@ -384,10 +367,10 @@ void renderSensedPoints(const ros::TimerEvent &event)
     }
     else
     {
-      std::cout << "push? ";
+      // std::cout << "push? ";
       if (dis_curr_pt < _dis_map(idx[0], idx[1]))
       {
-        std::cout << "push!" << std::endl;
+        // std::cout << "push!" << std::endl;
         _idx_map(idx[0], idx[1]) = i;
         _dis_map(idx[0], idx[1]) = dis_curr_pt;
       }
@@ -413,8 +396,10 @@ void renderSensedPoints(const ros::TimerEvent &event)
       {
         idx2Pt(x, y, _dis_map(x, y), p);
         _sense_map.points.emplace_back(p[0], p[1], p[2]);
-        // TODO:
-        _local_map.emplace_back(p[0], p[1], p[2]);
+        // TODO: laser -> body -> world
+        Eigen::Vector4d p_w(p(0), p(1), p(2), 1.0);
+        p_w = laser2world * p_w;
+        _local_map.emplace_back(p_w(0), p_w(1), p_w(2));
       }
     }
 
@@ -447,6 +432,7 @@ int main(int argc, char **argv)
 
   nh.getParam("drone_id", _drone_id);
   nh.getParam("drone_nm", _drone_nm); 
+  nh.getParam("tf45",    _tf45);
   nh.getParam("sensing_horizon", _sensing_horizon);
   nh.getParam("sensing_rate", _sensing_rate);
   nh.getParam("pc_resolution", _pc_resolution);

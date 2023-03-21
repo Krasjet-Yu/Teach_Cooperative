@@ -5,6 +5,9 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /ugv01
+        - /ugv01/mapping1
+        - /drone01
         - /Odometry1/Shape1
       Splitter Ratio: 0.46176469326019287
     Tree Height: 829
@@ -101,7 +104,7 @@ Visualization Manager:
             - Alpha: 1
               Autocompute Intensity Bounds: true
               Autocompute Value Bounds:
-                Max Value: 2.240000009536743
+                Max Value: 2.3399999141693115
                 Min Value: 0.03999999910593033
                 Value: true
               Axis: Z
@@ -110,7 +113,7 @@ Visualization Manager:
               Color: 52; 101; 164
               Color Transformer: AxisColor
               Decay Time: 0
-              Enabled: false
+              Enabled: true
               Invert Rainbow: false
               Max Color: 255; 255; 255
               Min Color: 0; 0; 0
@@ -125,7 +128,7 @@ Visualization Manager:
               Unreliable: false
               Use Fixed Frame: true
               Use rainbow: true
-              Value: false
+              Value: true
             - Alpha: 1
               Autocompute Intensity Bounds: true
               Autocompute Value Bounds:
@@ -564,7 +567,7 @@ Visualization Manager:
               Color: 239; 41; 41
               Color Transformer: FlatColor
               Decay Time: 0
-              Enabled: true
+              Enabled: false
               Invert Rainbow: false
               Max Color: 255; 255; 255
               Min Color: 0; 0; 0
@@ -579,7 +582,7 @@ Visualization Manager:
               Unreliable: false
               Use Fixed Frame: true
               Use rainbow: true
-              Value: true
+              Value: false
             - Alpha: 1
               Autocompute Intensity Bounds: true
               Autocompute Value Bounds:
@@ -608,7 +611,7 @@ Visualization Manager:
               Use Fixed Frame: true
               Use rainbow: true
               Value: false
-          Enabled: true
+          Enabled: false
           Name: mapping
         - Class: rviz/Group
           Displays:
@@ -1150,7 +1153,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 26.381641387939453
+      Distance: 15.650444030761719
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -1158,17 +1161,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.4567604064941406
-        Y: 0.7585487365722656
+        X: 5.016630172729492
+        Y: 0.025493144989013672
         Z: 1.5308303833007812
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6097979545593262
+      Pitch: 0.38479816913604736
       Target Frame: world
-      Yaw: 2.2421343326568604
+      Yaw: 1.2021512985229492
     Saved: ~
 Window Geometry:
   Displays:

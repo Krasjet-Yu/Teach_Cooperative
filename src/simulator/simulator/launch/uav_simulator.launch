@@ -60,6 +60,7 @@
     <param name="sensing_rate" value="30.0"/>
     <param name="estimation_rate" value="30.0"/>
     <param name="sensor" value="$(arg sensor)"/>
+    <param name="tf45" value="false"/>
     <param name="drone_nm"  value="$(arg group_name)"/>
     <param name="drone_id" value="$(arg group_id)"/>
 

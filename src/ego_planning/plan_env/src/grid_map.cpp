@@ -38,6 +38,9 @@ void GridMap::initMap(ros::NodeHandle &nh)
   node_.param("grid_map/p_occ", mp_.p_occ_, 0.80);
   node_.param("grid_map/min_ray_length", mp_.min_ray_length_, -0.1);
   node_.param("grid_map/max_ray_length", mp_.max_ray_length_, -0.1);
+  // TODO:
+  node_.param("grid_map/min_scan_length", mp_.min_scan_length_, -0.1);
+  node_.param("grid_map/max_scan_length", mp_.max_scan_length_, -0.1);
 
   node_.param("grid_map/visualization_truncate_height", mp_.visualization_truncate_height_, 999.0);
   node_.param("grid_map/virtual_ceil_height", mp_.virtual_ceil_height_, -0.1);
@@ -368,15 +371,12 @@ void GridMap::segmentPointCloud()
 {
   md_.seg_points_.clear();
   // md_.seg_points_.resize(640 * 480 / mp_.skip_pixel_ / mp_.skip_pixel_);
-  // md_.seg_points_cnt = 0;
+  md_.seg_points_cnt = 0;
   this->resetBuffer(md_.laser_pos_ - mp_.local_update_range_,
                     md_.laser_pos_ + mp_.local_update_range_);
 
   pcl::PointXYZ pt;
-  Eigen::Vector3d devi, p3d_w, p3d_inf;
-
-  int inf_step = ceil(mp_.obstacles_inflation_ / mp_.resolution_);
-  int inf_step_z = 1;
+  Eigen::Vector3d devi, p3d_w;
 
   double max_x, max_y, max_z, min_x, min_y, min_z;
 
@@ -401,42 +401,31 @@ void GridMap::segmentPointCloud()
     // std::cout << p3d_w(0) << " " << p3d_w(1) << " " << p3d_w(2) << std::endl;
     /* point inside update range */
     // Eigen::Vector3d devi = p3d - md_.laser_pos_;
-    Eigen::Vector3i inf_pt;
+    Eigen::Vector3i p3d_pt;
 
-    if (fabs(devi(0)) < mp_.local_update_range_(0) && fabs(devi(1)) < mp_.local_update_range_(1) &&
-        fabs(devi(2)) < mp_.local_update_range_(2))
-    {
-      /* inflate the point */
-      for (int x = -inf_step; x <= inf_step; ++x)
-        for (int y = -inf_step; y <= inf_step; ++y)
-          for (int z = -inf_step_z; z <= inf_step_z; ++z)
-          {
-            p3d_inf(0) = p3d_w(0) + x * mp_.resolution_;
-            p3d_inf(1) = p3d_w(1) + y * mp_.resolution_;
-            p3d_inf(2) = p3d_w(2) + z * mp_.resolution_;
+    max_x = max(max_x, p3d_w(0));
+    max_y = max(max_y, p3d_w(1));
+    max_z = max(max_z, p3d_w(2));
 
-            max_x = max(max_x, p3d_inf(0));
-            max_y = max(max_y, p3d_inf(1));
-            max_z = max(max_z, p3d_inf(2));
+    min_x = min(min_x, p3d_w(0));
+    min_y = min(min_y, p3d_w(1));
+    min_z = min(min_z, p3d_w(2));
 
-            min_x = min(min_x, p3d_inf(0));
-            min_y = min(min_y, p3d_inf(1));
-            min_z = min(min_z, p3d_inf(2));
+    posToIndex(p3d_w, p3d_pt);
+    if (!isInMap(p3d_pt))
+      continue;
 
-            posToIndex(p3d_inf, inf_pt);
+    // TODO: Traversable ground segmentation
+    // ref: https://github.com/url-kaist/TRAVEL
 
-            if (!isInMap(inf_pt))
-              continue;
-        
-            // md_.seg_points_[md_.seg_points_cnt++] = p3d_w;
-            md_.seg_points_.push_back(p3d_w);
+    // md_.seg_points_[md_.seg_points_cnt++] = p3d_w;
+    md_.seg_points_.push_back(p3d_w);
 
-            int idx_inf = toAddress(inf_pt);
+    // int idx_p3d = toAddress(p3d_pt);
 
-            md_.occupancy_buffer_inflate_[idx_inf] = 1;
-          }
-    }
+    // md_.occupancy_buffer_inflate_[idx_p3d] = 1;
   }
+  md_.seg_points_cnt = md_.seg_points_.size();
 
   min_x = min(min_x, md_.laser_pos_(0));
   min_y = min(min_y, md_.laser_pos_(1));
@@ -462,7 +451,109 @@ void GridMap::segmentPointCloud()
 
 void GridMap::bayesEstimateProcess()
 {
+  if (md_.seg_points_cnt == 0)
+    return;
+  ros::Time t1, t2;
+  double length;
+  int vox_idx;
+  double max_x, max_y, max_z, min_x, min_y, min_z;
+
+  Eigen::Vector3d pt_w;
+  for (int i = 0; i < md_.seg_points_cnt; ++i)
+  {
+    pt_w = md_.seg_points_[i];
+
+    if (!isInMap(pt_w))
+    {
+      pt_w = closetPointInMap(pt_w, md_.laser_pos_);
+
+      length = (pt_w - md_.laser_pos_).norm();
+      // TODO: scan is yuanzhu
+      if (length > mp_.max_scan_length_)
+      {
+        pt_w = (pt_w - md_.laser_pos_) / length * mp_.max_scan_length_ + md_.laser_pos_;
+      }
+      vox_idx = setCacheOccupancy(pt_w, 0);
+    }
+    else 
+    {
+      length = (pt_w - md_.laser_pos_).norm();
+      if (length > mp_.max_scan_length_)
+      {
+        pt_w = (pt_w - md_.laser_pos_) / length * mp_.max_scan_length_ + md_.laser_pos_;
+        vox_idx = setCacheOccupancy(pt_w, 0);
+      }
+      else{
+        vox_idx = setCacheOccupancy(pt_w, 1);
+      }
+    }
+    max_x = max(max_x, pt_w(0));
+    max_y = max(max_y, pt_w(1));
+    max_z = max(max_z, pt_w(2));
+
+    min_x = min(min_x, pt_w(0));
+    min_y = min(min_y, pt_w(1));
+    min_z = min(min_z, pt_w(2));
+  }
   
+  min_x = min(min_x, md_.laser_pos_(0));
+  min_y = min(min_y, md_.laser_pos_(1));
+  min_z = min(min_z, md_.laser_pos_(2));
+
+  max_x = max(max_x, md_.laser_pos_(0));
+  max_y = max(max_y, md_.laser_pos_(1));
+  max_z = max(max_z, md_.laser_pos_(2));
+  max_z = max(max_z, mp_.ground_height_);
+
+  posToIndex(Eigen::Vector3d(max_x, max_y, max_z), md_.local_bound_max_);
+  posToIndex(Eigen::Vector3d(min_x, min_y, min_z), md_.local_bound_min_);
+  boundIndex(md_.local_bound_min_);
+  boundIndex(md_.local_bound_max_);
+
+  md_.local_updated_ = true;
+  
+  // update occupancy cached in queue
+  Eigen::Vector3d local_range_min = md_.laser_pos_ - mp_.local_update_range_;
+  Eigen::Vector3d local_range_max = md_.laser_pos_ + mp_.local_update_range_;
+
+  Eigen::Vector3i min_id, max_id;
+  posToIndex(local_range_min, min_id);
+  posToIndex(local_range_max, max_id);
+  boundIndex(min_id);
+  boundIndex(max_id);
+
+  // TODO: update bayes
+  while (!md_.cache_voxel_.empty())
+  {
+    Eigen::Vector3i idx = md_.cache_voxel_.front();
+    int idx_ctns = toAddress(idx);
+    md_.cache_voxel_.pop();
+
+    double log_odds_update = 
+        md_.count_hit_[idx_ctns] >= md_.count_hit_and_miss_[idx_ctns] - md_.count_hit_[idx_ctns] ? mp_.prob_hit_log_ : mp_.prob_miss_log_;
+    md_.count_hit_[idx_ctns] = md_.count_hit_and_miss_[idx_ctns] = 0;
+
+    if (log_odds_update >= 0 && md_.occupancy_buffer_[idx_ctns] >= mp_.clamp_max_log_)
+    {
+      continue;
+    }
+    else if (log_odds_update <= 0 && md_.occupancy_buffer_[idx_ctns] <= mp_.clamp_min_log_)
+    {
+      md_.occupancy_buffer_[idx_ctns] = mp_.clamp_min_log_;
+      continue;
+    }
+
+    bool in_local = idx(0) >= min_id(0) && idx(0) <= max_id(0) && idx(1) >= min_id(1) &&
+                    idx(1) <= max_id(1) && idx(2) >= min_id(2) && idx(2) <= max_id(2);
+    if (!in_local)
+    {
+      md_.occupancy_buffer_[idx_ctns] = mp_.clamp_min_log_;
+    }
+
+    md_.occupancy_buffer_[idx_ctns] =
+        std::min(std::max(md_.occupancy_buffer_[idx_ctns] + log_odds_update, mp_.clamp_min_log_),
+                 mp_.clamp_max_log_);
+  }
 }
 
 void GridMap::raycastProcess()

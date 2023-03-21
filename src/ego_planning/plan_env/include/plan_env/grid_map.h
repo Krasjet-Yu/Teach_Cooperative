@@ -73,6 +73,8 @@ struct MappingParameters {
       min_occupancy_log_;                   // logit of occupancy probability
   double min_ray_length_, max_ray_length_;  // range of doing raycasting
 
+  double min_scan_length_, max_scan_length_;  // range of doing raycasting
+
   /* local map update and clear */
   int local_map_margin_;
 
