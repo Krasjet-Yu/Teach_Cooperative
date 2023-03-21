@@ -523,37 +523,7 @@ void GridMap::bayesEstimateProcess()
   boundIndex(max_id);
 
   // TODO: update bayes
-  while (!md_.cache_voxel_.empty())
-  {
-    Eigen::Vector3i idx = md_.cache_voxel_.front();
-    int idx_ctns = toAddress(idx);
-    md_.cache_voxel_.pop();
-
-    double log_odds_update = 
-        md_.count_hit_[idx_ctns] >= md_.count_hit_and_miss_[idx_ctns] - md_.count_hit_[idx_ctns] ? mp_.prob_hit_log_ : mp_.prob_miss_log_;
-    md_.count_hit_[idx_ctns] = md_.count_hit_and_miss_[idx_ctns] = 0;
-
-    if (log_odds_update >= 0 && md_.occupancy_buffer_[idx_ctns] >= mp_.clamp_max_log_)
-    {
-      continue;
-    }
-    else if (log_odds_update <= 0 && md_.occupancy_buffer_[idx_ctns] <= mp_.clamp_min_log_)
-    {
-      md_.occupancy_buffer_[idx_ctns] = mp_.clamp_min_log_;
-      continue;
-    }
-
-    bool in_local = idx(0) >= min_id(0) && idx(0) <= max_id(0) && idx(1) >= min_id(1) &&
-                    idx(1) <= max_id(1) && idx(2) >= min_id(2) && idx(2) <= max_id(2);
-    if (!in_local)
-    {
-      md_.occupancy_buffer_[idx_ctns] = mp_.clamp_min_log_;
-    }
-
-    md_.occupancy_buffer_[idx_ctns] =
-        std::min(std::max(md_.occupancy_buffer_[idx_ctns] + log_odds_update, mp_.clamp_min_log_),
-                 mp_.clamp_max_log_);
-  }
+  
 }
 
 void GridMap::raycastProcess()
