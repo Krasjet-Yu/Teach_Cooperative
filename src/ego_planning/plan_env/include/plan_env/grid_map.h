@@ -24,6 +24,8 @@
 #include <message_filters/time_synchronizer.h>
 
 #include <plan_env/raycast.h>
+// #include <plan_env/tgs.hpp>
+// #include <utils/utils.hpp>
 
 #define logit(x) (log((x) / (1 - (x))))
 
@@ -73,6 +75,8 @@ struct MappingParameters {
       min_occupancy_log_;                   // logit of occupancy probability
   double min_ray_length_, max_ray_length_;  // range of doing raycasting
 
+  // boost::shared_ptr<travel::TravelGroundSeg<PointT> > travel_ground_seg_;
+
   double min_scan_length_, max_scan_length_;  // range of doing raycasting
 
   /* local map update and clear */
@@ -112,6 +116,10 @@ struct MappingData {
 
   // laser local data
   std::vector<pcl::PointXYZ> laser_cloud_points_, last_cloud_points_;
+  // laser filter data
+  // pcl::PointCloud<PointT>::Ptr filtered_pc_;
+  // pcl::PointCloud<PointT>::Ptr ground_pc_;
+  // pcl::PointCloud<PointT>::Ptr nonground_pc_;
 
   Eigen::Matrix4d laser2body_;
 

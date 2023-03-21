@@ -16,6 +16,8 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
   cv_bridge
   message_filters
+  pcl_conversions
+  pcl_ros
 )
 
 find_package(Eigen3 REQUIRED)

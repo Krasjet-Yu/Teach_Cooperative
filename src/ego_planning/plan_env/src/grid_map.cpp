@@ -53,6 +53,24 @@ void GridMap::initMap(ros::NodeHandle &nh)
   node_.param("grid_map/local_map_margin", mp_.local_map_margin_, 1);
   node_.param("grid_map/ground_height", mp_.ground_height_, 1.0);
 
+  double tgf_res, th_seeds, th_dist, th_outlier, th_normal, th_weight, th_lcc_normal_similarity, th_lcc_planar_dist, th_obstacle;
+  int num_iter, num_lpr, num_min_pts;
+  bool refine_mode, viz_mode;
+  node_.param("/tgs/resolution"   , tgf_res, 5.0);
+  node_.param("/tgs/num_iter"     , num_iter, 3);
+  node_.param("/tgs/num_lpr"      , num_lpr, 20);
+  node_.param("/tgs/num_min_pts"  , num_min_pts, 10);
+  node_.param("/tgs/th_seeds"     , th_seeds, 0.4);
+  node_.param("/tgs/th_dist"      , th_dist, 0.3);
+  node_.param("/tgs/th_outlier"   , th_outlier, 0.3);
+  node_.param("/tgs/th_normal"    , th_normal, 0.707);
+  node_.param("/tgs/th_weight"    , th_weight, 1.5);
+  node_.param("/tgs/th_obstacle"  , th_obstacle, 1.5);
+  node_.param("/tgs/th_lcc_normal", th_lcc_normal_similarity , 1.5);
+  node_.param("/tgs/th_lcc_planar", th_lcc_planar_dist , 1.5);
+  node_.param("/tgs/refine_mode"  , refine_mode, true);
+  node_.param("/tgs/visualization", viz_mode, true);  
+
   mp_.resolution_inv_ = 1 / mp_.resolution_;
   mp_.map_origin_ = Eigen::Vector3d(-x_size / 2.0, -y_size / 2.0, mp_.ground_height_);
   mp_.map_size_ = Eigen::Vector3d(x_size, y_size, z_size);
@@ -130,6 +148,15 @@ void GridMap::initMap(ros::NodeHandle &nh)
   }
   else if (mp_.sensor_type_ == string("laser")) 
   {
+    // mp_.travel_ground_seg_.reset(new travel::TravelGroundSeg<PointT>());
+    std::cout << "Lidar Max Scan Range: " << mp_.max_scan_length_ << std::endl;
+    std::cout << "Lidar Min Scan Range: " << mp_.min_scan_length_ << std::endl; 
+    // mp_.travel_ground_seg_->setParams(mp_.max_scan_length_, mp_.min_scan_length_, tgf_res, 
+    //                                   num_iter, num_lpr, num_min_pts, th_seeds, 
+    //                                   th_dist, th_outlier, th_normal, th_weight, 
+    //                                   th_lcc_normal_similarity, th_lcc_planar_dist, th_obstacle,
+    //                                   refine_mode, viz_mode);
+
     cloud_sub_.reset(new message_filters::Subscriber<sensor_msgs::PointCloud2>(node_, "/grid_map/cloud", 50));
     
     if (mp_.pose_type_ == POSE_STAMPED)
@@ -375,6 +402,7 @@ void GridMap::segmentPointCloud()
   this->resetBuffer(md_.laser_pos_ - mp_.local_update_range_,
                     md_.laser_pos_ + mp_.local_update_range_);
 
+  // PointT pt;
   pcl::PointXYZ pt;
   Eigen::Vector3d devi, p3d_w;
 
@@ -392,7 +420,9 @@ void GridMap::segmentPointCloud()
 
   for (size_t i = 0; i < md_.laser_cloud_points_.size(); ++i)
   {
-    pt = md_.laser_cloud_points_[i];
+    pt.x = md_.laser_cloud_points_[i].x;
+    pt.y = md_.laser_cloud_points_[i].y;
+    pt.z = md_.laser_cloud_points_[i].z;
     // std::cout << pt.x << " " << pt.y << " " << pt.z << std::endl;
     devi(0) = pt.x, devi(1) = pt.y, devi(2) = pt.z;
     // std::cout << laser_r << std::endl;
@@ -417,14 +447,29 @@ void GridMap::segmentPointCloud()
 
     // TODO: Traversable ground segmentation
     // ref: https://github.com/url-kaist/TRAVEL
-
+    pt.x = p3d_w(0);
+    pt.y = p3d_w(1);
+    pt.z = p3d_w(2);
+    // md_.filtered_pc_->push_back(pt);
     // md_.seg_points_[md_.seg_points_cnt++] = p3d_w;
     md_.seg_points_.push_back(p3d_w);
-
     // int idx_p3d = toAddress(p3d_pt);
 
     // md_.occupancy_buffer_inflate_[idx_p3d] = 1;
   }
+  // Apply traversable ground segmentation
+  // double ground_seg_time = 0.0;
+  // mp_.travel_ground_seg_->estimateGround(*md_.filtered_pc_, *md_.ground_pc_, *md_.nonground_pc_, ground_seg_time);
+  // std::cout << "\033[1;35m Traversable-Ground Seg: " << md_.filtered_pc_->size() << " -> Ground: "
+  //           << md_.ground_pc_->size() << ", NonGround: " << md_.nonground_pc_->size() << "\033[0m" << std::endl;
+  // std::cout << "Traversable-Ground Seg time: " << ground_seg_time << std::endl;
+
+  // for (auto &pt: md_.nonground_pc_->points)
+  // {
+  //   p3d_w(0) = pt.x, p3d_w(1) = pt.y, p3d_w(2) = pt.z;
+  //   md_.seg_points_.push_back(p3d_w);
+  // }
+
   md_.seg_points_cnt = md_.seg_points_.size();
 
   min_x = min(min_x, md_.laser_pos_(0));
@@ -523,7 +568,37 @@ void GridMap::bayesEstimateProcess()
   boundIndex(max_id);
 
   // TODO: update bayes
-  
+  while (!md_.cache_voxel_.empty())
+  {
+    Eigen::Vector3i idx = md_.cache_voxel_.front();
+    int idx_ctns = toAddress(idx);
+    md_.cache_voxel_.pop();
+
+    double log_odds_update = 
+        md_.count_hit_[idx_ctns] >= md_.count_hit_and_miss_[idx_ctns] - md_.count_hit_[idx_ctns] ? mp_.prob_hit_log_ : mp_.prob_miss_log_;
+    md_.count_hit_[idx_ctns] = md_.count_hit_and_miss_[idx_ctns] = 0;
+
+    if (log_odds_update >= 0 && md_.occupancy_buffer_[idx_ctns] >= mp_.clamp_max_log_)
+    {
+      continue;
+    }
+    else if (log_odds_update <= 0 && md_.occupancy_buffer_[idx_ctns] <= mp_.clamp_min_log_)
+    {
+      md_.occupancy_buffer_[idx_ctns] = mp_.clamp_min_log_;
+      continue;
+    }
+
+    bool in_local = idx(0) >= min_id(0) && idx(0) <= max_id(0) && idx(1) >= min_id(1) &&
+                    idx(1) <= max_id(1) && idx(2) >= min_id(2) && idx(2) <= max_id(2);
+    if (!in_local)
+    {
+      md_.occupancy_buffer_[idx_ctns] = mp_.clamp_min_log_;
+    }
+
+    md_.occupancy_buffer_[idx_ctns] =
+        std::min(std::max(md_.occupancy_buffer_[idx_ctns] + log_odds_update, mp_.clamp_min_log_),
+                 mp_.clamp_max_log_);
+  }
 }
 
 void GridMap::raycastProcess()
@@ -1261,6 +1336,15 @@ void GridMap::cloudCallbackTmp(const sensor_msgs::PointCloud2ConstPtr &cloud)
     std::cout << "isnan laser pose!" << std::endl;
     return;
   }
+
+  // init filter
+  // md_.filtered_pc_->clear();
+  // md_.ground_pc_->clear();
+  // md_.nonground_pc_->clear();
+
+  // md_.filtered_pc_->header = latest_cloud.header;
+  // md_.filtered_pc_->points.reserve(latest_cloud.points.size());
+
   md_.laser_cloud_points_.assign(latest_cloud.points.begin(), latest_cloud.points.end());
 
   md_.occ_need_update_ = true;
