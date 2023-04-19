@@ -1,5 +1,13 @@
 # Teach_Cooperative
 
+>How to Build
+Dependenices
+```shell
+sudo apt-get install ros-noetic-jsk-recognition
+sudo apt-get install ros-noetic-jsk-common-msgs
+sudo apt-get install ros-noetic-jsk-rviz-plugins
+```
+
 >Preparation and Visualization:
 ```
 git clone https://github.com/Krasjet-Yu/Teach_Cooperative.git
